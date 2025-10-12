@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
+	"github.com/crnvl96/spot/internal"
 	"github.com/spf13/cobra"
 )
 
@@ -16,9 +16,7 @@ Spot is a cli tool that scans all folders present in the current directory.
 If any of these folders is a git repository, it will automatically check if it has any uncommited or unpushed changed, notifying you at the end.
 The main goal of this tool it to help you prevent losing work by forgetting to commit changes to any of your repositories.
 `,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Hey, its Spot!")
-	},
+	RunE: internal.Run,
 }
 
 func Execute() {
