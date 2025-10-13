@@ -29,42 +29,57 @@ type RepoStatus struct {
 	Style  lipgloss.Style
 }
 
-func GetVCSInfos() []RepoStatus {
+func GetVCSInfos(targets []string, depth int) []RepoStatus {
 	all_repos := make([]RepoStatus, 0, 4)
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		return all_repos
-	}
-
-	if isGitRepo(cwd) {
-		info := isDirty(cwd)
-		style := cleanStyle
-		if info.Reason != "" {
-			style = dirtyStyle
-		}
-		all_repos = append(all_repos, RepoStatus{Path: info.Path, Reason: info.Reason, Style: style})
-	}
-
-	folders, err := os.ReadDir(cwd)
-	if err != nil {
-		return all_repos
-	}
-
-	for _, folder := range folders {
-		folderPath := filepath.Join(cwd, folder.Name())
-
-		if isGitRepo(folderPath) {
-			info := isDirty(folderPath)
-			style := cleanStyle
-			if info.Reason != "" {
-				style = dirtyStyle
+	for _, target := range targets {
+		if strings.HasSuffix(target, "/**") {
+			base := strings.TrimSuffix(target, "/**")
+			collectReposRecursive(base, depth, &all_repos)
+		} else {
+			if isGitRepo(target) {
+				info := isDirty(target)
+				style := cleanStyle
+				if info.Reason != "" {
+					style = dirtyStyle
+				}
+				all_repos = append(all_repos, RepoStatus{Path: info.Path, Reason: info.Reason, Style: style})
 			}
-			all_repos = append(all_repos, RepoStatus{Path: info.Path, Reason: info.Reason, Style: style})
 		}
 	}
 
 	return all_repos
+}
+
+func collectReposRecursive(base string, maxDepth int, repos *[]RepoStatus) {
+	walkDir(base, 0, maxDepth, repos)
+}
+
+func walkDir(path string, currentDepth int, maxDepth int, repos *[]RepoStatus) {
+	if currentDepth > maxDepth {
+		return
+	}
+
+	if currentDepth > 0 && isGitRepo(path) {
+		info := isDirty(path)
+		style := cleanStyle
+		if info.Reason != "" {
+			style = dirtyStyle
+		}
+		*repos = append(*repos, RepoStatus{Path: info.Path, Reason: info.Reason, Style: style})
+	}
+
+	if currentDepth < maxDepth {
+		entries, err := os.ReadDir(path)
+		if err != nil {
+			return
+		}
+		for _, entry := range entries {
+			if entry.IsDir() {
+				walkDir(filepath.Join(path, entry.Name()), currentDepth+1, maxDepth, repos)
+			}
+		}
+	}
 }
 
 func isGitRepo(path string) bool {
@@ -96,9 +111,28 @@ func isDirty(repoPath string) DirtyInfo {
 }
 
 func Run(cmd *cobra.Command, args []string) error {
-	repos := GetVCSInfos()
+	depth, err := cmd.Flags().GetInt("depth")
+	if err != nil {
+		return err
+	}
+
+	targets, err := cmd.Flags().GetStringSlice("target")
+	if err != nil {
+		return err
+	}
+
+	if len(targets) == 0 {
+		return fmt.Errorf("no targets specified")
+	}
 
 	home, _ := os.UserHomeDir()
+	for i, target := range targets {
+		if strings.HasPrefix(target, "~") {
+			targets[i] = strings.Replace(target, "~", home, 1)
+		}
+	}
+
+	repos := GetVCSInfos(targets, depth)
 
 	fmt.Println(headerStyle.Render("Repository Status"))
 
