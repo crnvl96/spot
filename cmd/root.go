@@ -11,20 +11,18 @@ var rootCmd = &cobra.Command{
 	Use:   "spot",
 	Short: "Spot is a cli tool to check git repositories for uncommitted or unpushed changes",
 	Long: `
-Spot scans specified directories for git repositories and checks for uncommitted changes or unpushed commits.
+Spot scans specified directories (and their subdirectories up to 2 levels deep) for git repositories and checks for uncommitted changes or unpushed commits.
 
-Use -t to specify target directories. Append /** to include subdirectories up to the depth specified by -d.
+If no targets are specified, it scans the current directory.
+
 Examples:
-  spot -t ~/config/nvim ~/Developer/**
-  spot -d 2 -t ~/Developer/**
+  spot -t ~/config ~/Developer
 `,
 	RunE: internal.Run,
 }
 
 func init() {
-	rootCmd.Flags().IntP("depth", "d", 1, "Depth for subdirectory search when using /**")
-	rootCmd.Flags().StringSliceP("target", "t", []string{}, "Target directories to scan")
-	rootCmd.MarkFlagRequired("target")
+	rootCmd.Flags().StringSliceP("target", "t", []string{}, "Target directories to scan (scans recursively up to 2 levels)")
 }
 
 func Execute() {
