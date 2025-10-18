@@ -1,7 +1,7 @@
 package main
 
-import "github.com/crnvl96/spot/cmd"
+import "github.com/crnvl96/spot/internal"
 
 func main() {
-	cmd.Execute()
+	internal.Execute()
 }

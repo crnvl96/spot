@@ -18,13 +18,13 @@ var (
 	bulletStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("3")) // yellow
 )
 
-type RepoStatus struct {
+type repoStatus struct {
 	Path   string
 	Reason string
 	Style  lipgloss.Style
 }
 
-func Run(cmd *cobra.Command, args []string) error {
+func run(cmd *cobra.Command, args []string) error {
 	targets, err := cmd.Flags().GetStringSlice("target")
 	if err != nil {
 		return err
@@ -34,9 +34,9 @@ func Run(cmd *cobra.Command, args []string) error {
 		targets = []string{"."}
 	}
 
-	allRepos := GetVCSInfos(targets)
+	allRepos := getVCSInfos(targets)
 
-	var dirtyRepos []RepoStatus
+	var dirtyRepos []repoStatus
 
 	for _, repo := range allRepos {
 		if repo.Reason != "" {
@@ -57,8 +57,8 @@ func Run(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func GetVCSInfos(targets []string) []RepoStatus {
-	all_repos := make([]RepoStatus, 0, 4)
+func getVCSInfos(targets []string) []repoStatus {
+	all_repos := make([]repoStatus, 0, 4)
 
 	for _, target := range targets {
 		walkDir(target, 0, 2, &all_repos)
@@ -67,7 +67,7 @@ func GetVCSInfos(targets []string) []RepoStatus {
 	return all_repos
 }
 
-func walkDir(path string, currentDepth int, maxDepth int, repos *[]RepoStatus) {
+func walkDir(path string, currentDepth int, maxDepth int, repos *[]repoStatus) {
 	if currentDepth > maxDepth {
 		return
 	}
@@ -97,7 +97,7 @@ func isGitRepo(path string) bool {
 	return err == nil && info.IsDir()
 }
 
-func checkRepoStatus(repoPath string) RepoStatus {
+func checkRepoStatus(repoPath string) repoStatus {
 	absPath, _ := filepath.Abs(repoPath)
 
 	status := exec.Command("git", "status", "--porcelain")
@@ -127,5 +127,5 @@ func checkRepoStatus(repoPath string) RepoStatus {
 		style = dirtyStyle
 	}
 
-	return RepoStatus{Path: absPath, Reason: reason, Style: style}
+	return repoStatus{Path: absPath, Reason: reason, Style: style}
 }

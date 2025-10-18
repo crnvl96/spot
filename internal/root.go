@@ -1,9 +1,8 @@
-package cmd
+package internal
 
 import (
 	"os"
 
-	"github.com/crnvl96/spot/internal"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +17,7 @@ If no targets are specified, it scans the current directory.
 Examples:
   spot -t ~/config ~/Developer
 `,
-	RunE: internal.Run,
+	RunE: run,
 }
 
 func init() {
